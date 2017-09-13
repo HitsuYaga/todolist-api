@@ -24,10 +24,12 @@ app.get('/', (req, res) => {
   res.send('Todo List Api');
 })
 
+// Get All TodoList
 app.get('/todos', (req, res) => {
   res.send(todos);
 })
 
+// Get TodoList by using id
 app.get('/todos/:id', (req, res) => {
   var id = parseInt(req.params.id, 10);
   var matchTodo;

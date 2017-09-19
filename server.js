@@ -14,7 +14,22 @@ app.get('/', (req, res) => {
 
 // Get All TodoList
 app.get('/todos', (req, res) => {
-  res.send(todos);
+  var queryParams = req.query;
+  var filterTodos = todos;
+
+  if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
+    filterTodos = _.findWhere(filterTodos, {completed: true});
+  } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
+    filterTodos = _.findWhere(filterTodos, {completed: false});
+  }
+
+  if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
+    filterTodos = _.filter(filterTodos, (todo) => {
+      return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
+    });
+  }
+
+  res.send(filterTodos);
 })
 
 // Get TodoList by using id
@@ -66,13 +81,13 @@ app.put('/todos/:id', (req, res) => {
 
   if (body.hasOwnProperty('completed') && _.isBoolean(body.completed)) {
     validAttributes.completed = body.completed;
-  } else if {
+  } else {
     return res.status(400).send();
   }
 
   if (body.hasOwnProperty('description') && _.isString(body.description) && (body.description.trim().length === 0)) {
     validAttributes.description = body.description;
-  } else if {
+  } else {
     return res.status(400).send();
   }
 

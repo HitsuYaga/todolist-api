@@ -31,7 +31,7 @@ sequelize.sync({
       console.log('Can not found with this ID')
     }
   })
-  // Todo.create({
+
   //   description: 'Finish the final exam',
   //   completed: false
   // }).then((todo) => {

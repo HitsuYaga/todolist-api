@@ -7,13 +7,56 @@ var sequelize = new Sequelize(undefined, undefined, undefined, {
 
 var Todo = sequelize.define('todo', {
   'description': {
-    type: Sequelize.STRING
+    type: Sequelize.STRING,
+    allowNull: false,
+    validate: {
+      notEmpty: true
+    }
   },
   'completed': {
-    type: Sequelize.BOOLEAN
+    type: Sequelize.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
   }
 })
 
-sequelize.sync().then(() => {
+sequelize.sync({
+  // force: true
+}).then(() => {
   console.log('Everything is synced')
+  Todo.findById(1).then((todo) => {
+    if (todo) {
+      console.log(todo.toJSON());
+    } else {
+      console.log('Can not found with this ID')
+    }
+  })
+  // Todo.create({
+  //   description: 'Finish the final exam',
+  //   completed: false
+  // }).then((todo) => {
+  //   return Todo.create({
+  //     description: 'Walking with my dog'
+  //   })
+  // }).then(() => {
+  //   // return Todo.findById(1)
+  //   return Todo.findAll({
+  //     where: {
+  //       completed: false,
+  //       description: {
+  //         $like: '%final%'
+  //       }
+  //     }
+  //   })
+  // }).then((todos) => {
+  //   if (todos) {
+  //     todos.forEach((todo) => {
+  //       console.log(todo.toJSON())
+  //     })
+  //   } else {
+  //     console.log('Can not found!')
+  //   }
+  // }).catch((e) => {
+  //   console.log(e);
+  // })
 });

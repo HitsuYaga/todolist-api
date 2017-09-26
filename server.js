@@ -35,21 +35,6 @@ app.get('/todos', (req, res) => {
   }, (e) => {
     res.status(500).send();
   })
-  // var filterTodos = todos;
-
-  // if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'true') {
-  //   filterTodos = _.findWhere(filterTodos, {completed: true});
-  // } else if (queryParams.hasOwnProperty('completed') && queryParams.completed === 'false') {
-  //   filterTodos = _.findWhere(filterTodos, {completed: false});
-  // }
-
-  // if (queryParams.hasOwnProperty('q') && queryParams.q.length > 0) {
-  //   filterTodos = _.filter(filterTodos, (todo) => {
-  //     return todo.description.toLowerCase().indexOf(queryParams.q.toLowerCase()) > -1;
-  //   });
-  // }
-
-  // res.send(filterTodos);
 })
 
 // Get TodoList by using id
@@ -61,12 +46,6 @@ app.get('/todos/:id', (req, res) => {
   }, (e) => {
     return res.status(404).json(e);
   });
-
-  // if (matchedTodo) {
-  //   res.json(matchedTodo);
-  // } else {
-  //   res.status(400).send();
-  // }
 })
 
 app.post('/todos', (req, res) => {
@@ -77,14 +56,6 @@ app.post('/todos', (req, res) => {
   }, (e) => {
     return res.status(400).json(e);
   })
-  // if (!_.isBoolean(body.completed) || (!_.isString(body.description)) || (body.description.trim().length === 0)) {
-  //   return res.status(400).send();
-  // }
-
-  // body.id = todoNextId++;
-  // todos.push(body);
-
-  // res.json(body);
 })
 
 app.delete('/todos/:id', (req, res) => {
@@ -105,14 +76,6 @@ app.delete('/todos/:id', (req, res) => {
   }, (e) => {
     res.status(500).send();
   })
-  // var matchedTodo = _.findWhere(todos, {'id': id});
-
-  // if (!matchedTodo) {
-  //   res.status(400).json({'error': 'Can not found todo with id'});
-  // } else {
-  //   todos = _.without(todos, matchedTodo);
-  //   res.json(matchedTodo);
-  // }
 })
 
 app.put('/todos/:id', (req, res) => {
@@ -144,7 +107,17 @@ app.put('/todos/:id', (req, res) => {
 
 });
 
-db.sequelize.sync().then(() => {
+app.post('/users', (req, res) => {
+  var body = _.pick(req.body, 'email', 'password');
+
+  db.user.create(body).then((user) => {
+    res.json(user.toPublicJSON());
+  }, (e) => {
+    res.status(400).json(e);
+  })
+})
+
+db.sequelize.sync({force: true}).then(() => {
   app.listen(3000, () => {
     console.log('Your server is starting in port 3000!');
   })

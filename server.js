@@ -2,6 +2,8 @@ var express = require('express');
 var bodyParser = require('body-parser');
 var _ = require('underscore');
 var db = require('./db.js');
+var bcrypt = require('bcrypt');
+var middleware = require('./middleware')(db);
 
 var app = express();
 app.use(bodyParser.json());
@@ -14,7 +16,7 @@ app.get('/', (req, res) => {
 })
 
 // Get All TodoList
-app.get('/todos', (req, res) => {
+app.get('/todos', middleware.requireAuthentication, (req, res) => {
   var query = req.query;
   var where = {};
 
@@ -38,7 +40,7 @@ app.get('/todos', (req, res) => {
 })
 
 // Get TodoList by using id
-app.get('/todos/:id', (req, res) => {
+app.get('/todos/:id', middleware.requireAuthentication, (req, res) => {
   var id = parseInt(req.params.id, 10);
   // var matchedTodo = _.findWhere(todos, {'id': id});
   var matchedTodo = db.todo.findById(id).then((todo) => {
@@ -48,17 +50,21 @@ app.get('/todos/:id', (req, res) => {
   });
 })
 
-app.post('/todos', (req, res) => {
+app.post('/todos', middleware.requireAuthentication, (req, res) => {
   body = _.pick(req.body, 'description', 'completed');
 
   db.todo.create(body).then((todo) => {
-    return res.json(todo.toJSON());
+    req.user.addTodo(todo).then(() => {
+      return todo.reload();
+    }).then((todo) => {
+      res.json(todo.toJSON());
+    })
   }, (e) => {
     return res.status(400).json(e);
   })
 })
 
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', middleware.requireAuthentication, (req, res) => {
   var id = parseInt(req.params.id, 10);
 
   db.todo.destroy({
@@ -78,7 +84,7 @@ app.delete('/todos/:id', (req, res) => {
   })
 })
 
-app.put('/todos/:id', (req, res) => {
+app.put('/todos/:id', middleware.requireAuthentication, (req, res) => {
   var id = parseInt(req.params.id, 10);
   body = _.pick(req.body, 'description', 'completed');
   attributes = {};
@@ -115,6 +121,16 @@ app.post('/users', (req, res) => {
   }, (e) => {
     res.status(400).json(e);
   })
+})
+
+app.post('/users/login', (req, res) => {
+  var body = _.pick(req.body, 'email', 'password');
+
+  db.user.authenticate(body).then((user) => {
+    res.header('Auth', user.generateToken('authentiation')).json(user.toPublicJSON());
+  }, () => {
+    res.status(401).send();
+  });
 })
 
 db.sequelize.sync({force: true}).then(() => {

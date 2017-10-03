@@ -18,7 +18,9 @@ app.get('/', (req, res) => {
 // Get All TodoList
 app.get('/todos', middleware.requireAuthentication, (req, res) => {
   var query = req.query;
-  var where = {};
+  var where = {
+    userId: req.user.get('id')
+  };
 
   if (query.hasOwnProperty('completed') && query.completed === 'true') {
     where.completed = true;
@@ -43,7 +45,12 @@ app.get('/todos', middleware.requireAuthentication, (req, res) => {
 app.get('/todos/:id', middleware.requireAuthentication, (req, res) => {
   var id = parseInt(req.params.id, 10);
   // var matchedTodo = _.findWhere(todos, {'id': id});
-  var matchedTodo = db.todo.findById(id).then((todo) => {
+  var matchedTodo = db.todo.findOne({
+    where: {
+      id: id,
+      userId: req.user.get('id')
+    }
+  }).then((todo) => {
     return res.json(todo.toJSON());
   }, (e) => {
     return res.status(404).json(e);
@@ -69,7 +76,8 @@ app.delete('/todos/:id', middleware.requireAuthentication, (req, res) => {
 
   db.todo.destroy({
     where: {
-      id: id
+      id: id,
+      userId: req.user.get('id')
     }
   }).then((rowsDelete) => {
     if (rowsDelete === 0) {
@@ -97,7 +105,12 @@ app.put('/todos/:id', middleware.requireAuthentication, (req, res) => {
     attributes.description = body.description;
   }
 
-  db.todo.findById(id).then((todo) => {
+  db.todo.findOne({
+    where: {
+      id: id,
+      userId: req.user.get('id')
+    }
+  }).then((todo) => {
     if (todo) {
       todo.update(attributes).then((todo) => {
         res.json(todo.toJSON());
@@ -125,13 +138,28 @@ app.post('/users', (req, res) => {
 
 app.post('/users/login', (req, res) => {
   var body = _.pick(req.body, 'email', 'password');
+  var userInstance;
 
   db.user.authenticate(body).then((user) => {
-    res.header('Auth', user.generateToken('authentiation')).json(user.toPublicJSON());
-  }, () => {
+    var token = user.generateToken('authentication');
+    userInstance = user;
+    return db.token.create({
+			token: token
+		});
+  }).then((tokenInstance) => {
+    res.header('Auth', tokenInstance.get('token')).json(userInstance.toPublicJSON());
+  }).catch(() => {
     res.status(401).send();
   });
 })
+
+app.delete('/users/login', middleware.requireAuthentication, (req, res) => {
+  req.token.destroy().then(() => {
+    res.status(204).send();
+  }).catch(() => {
+    res.status(500).send();
+  })
+});
 
 db.sequelize.sync({force: true}).then(() => {
   app.listen(3000, () => {
